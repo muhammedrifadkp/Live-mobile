@@ -2,8 +2,11 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { ImageResponse } from "next/og";
 import { BUSINESS } from "@/lib/constants";
+import { RIFAD_WHATSAPP, SITE_PAUSED } from "@/lib/paused";
 
-export const alt = `${BUSINESS.name}, ${BUSINESS.tagline}, ${BUSINESS.city}`;
+export const alt = SITE_PAUSED
+  ? "Contact Rifad on WhatsApp"
+  : `${BUSINESS.name}, ${BUSINESS.tagline}, ${BUSINESS.city}`;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -22,7 +25,57 @@ async function loadFont(family: string, weight: number, text: string): Promise<A
   }
 }
 
+/** Share image while the site is paused (lib/paused.ts): no shop details, just Rifad's numbers. */
+async function PausedImage() {
+  const heading = "CONTACT RIFAD";
+  const note = "This website is temporarily unavailable.";
+  const numbers = RIFAD_WHATSAPP.map((wa) => `WhatsApp ${wa.display}`);
+  const [displayFont, textFont] = await Promise.all([
+    loadFont("Big+Shoulders", 800, heading),
+    loadFont("Public+Sans", 600, note + numbers.join("")),
+  ]);
+  const fonts = [
+    ...(displayFont ? [{ name: "Display", data: displayFont, weight: 800 as const, style: "normal" as const }] : []),
+    ...(textFont ? [{ name: "Text", data: textFont, weight: 600 as const, style: "normal" as const }] : []),
+  ];
+
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          background: "#161311",
+          color: "#F5F1EB",
+          padding: "64px 88px",
+        }}
+      >
+        <div style={{ fontFamily: "Display", fontSize: 168, fontWeight: 800, lineHeight: 0.9, letterSpacing: -1 }}>
+          {heading}
+        </div>
+        <div style={{ fontFamily: "Text", fontSize: 36, fontWeight: 600, marginTop: 30, color: "#B9B0A7" }}>{note}</div>
+        <div style={{ display: "flex", gap: 20, marginTop: 44 }}>
+          {numbers.map((n) => (
+            <div
+              key={n}
+              style={{ fontFamily: "Text", fontSize: 34, fontWeight: 600, background: "#25D366", color: "#161311", padding: "18px 30px" }}
+            >
+              {n}
+            </div>
+          ))}
+        </div>
+      </div>
+    ),
+    { ...size, fonts: fonts.length ? fonts : undefined },
+  );
+}
+
 export default async function OpengraphImage() {
+  if (SITE_PAUSED) return PausedImage();
+
   const lines = ["LIVE MOBILE", "SALES · SERVICE · ACCESSORIES"];
   const small = [BUSINESS.tagline, `${BUSINESS.address.area}, ${BUSINESS.city}  ·  ${BUSINESS.phones[0].display}`];
   const [displayFont, textFont] = await Promise.all([

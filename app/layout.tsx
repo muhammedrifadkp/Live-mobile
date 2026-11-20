@@ -8,6 +8,7 @@ import { RevealObserver } from "@/components/RevealObserver";
 import { StructuredData } from "@/components/StructuredData";
 import { BUSINESS, SEO_KEYWORDS } from "@/lib/constants";
 import { getSiteUrl } from "@/lib/site";
+import { PAUSED_METADATA, SITE_PAUSED } from "@/lib/paused";
 
 const bigShoulders = Big_Shoulders({
   subsets: ["latin"],
@@ -36,7 +37,7 @@ const title = "Live Mobile | Mobile Service Centre in Kozhikode — Phone Repair
 const description =
   "Live Mobile is an all mobile service centre at RP Mall, Mavoor Road, Kozhikode: phone repairs for every brand including iPhone and Samsung, new phones and accessories. Book on WhatsApp.";
 
-export const metadata: Metadata = {
+const siteMetadata: Metadata = {
   metadataBase: new URL(getSiteUrl()),
   title: { default: title, template: "%s | Live Mobile" },
   description,
@@ -58,6 +59,10 @@ export const metadata: Metadata = {
   formatDetection: { telephone: false },
 };
 
+export const metadata: Metadata = SITE_PAUSED
+  ? { metadataBase: siteMetadata.metadataBase, ...PAUSED_METADATA }
+  : siteMetadata;
+
 export const viewport: Viewport = {
   themeColor: "#161311",
   width: "device-width",
@@ -66,12 +71,19 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const fonts = `${bigShoulders.variable} ${publicSans.variable} ${anekMalayalam.variable}`;
+
+  // Paused (lib/paused.ts): only the "Contact Rifad" screen, no shop header, footer or WhatsApp.
+  if (SITE_PAUSED) {
+    return (
+      <html lang="en-IN" className={fonts} suppressHydrationWarning>
+        <body className="flex min-h-screen flex-col">{children}</body>
+      </html>
+    );
+  }
+
   return (
-    <html
-      lang="en-IN"
-      className={`${bigShoulders.variable} ${publicSans.variable} ${anekMalayalam.variable}`}
-      suppressHydrationWarning
-    >
+    <html lang="en-IN" className={fonts} suppressHydrationWarning>
       <body className="flex min-h-screen flex-col">
         <a
           href="#main"
